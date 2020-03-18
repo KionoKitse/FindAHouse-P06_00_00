@@ -1,12 +1,12 @@
 {
 
-  "description": "Adds a solid red border to all webpages matching mozilla.org. See https://developer.mozilla.org/en-US/Add-ons/WebExtensions/Examples#borderify",
+  "description": "Web extension to assist housing search on Kijiji",
   "manifest_version": 2,
   "name": "FindAHouse",
   "version": "1.0",
-  "homepage_url": "https://github.com/mdn/webextensions-examples/tree/master/borderify",
+  "homepage_url": "https://kionokitse.wordpress.com/findahouse/",
   "icons": {
-    "48": "icons/border-48.png"
+    "48": "Otter.png"
   },
 
   "content_scripts": [
@@ -20,6 +20,6 @@
 /*
 ***** ROLL THE CREDITS *****
 >> OTHERS <<
-* Firefox plug in tutorial				  https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension
+* Firefox plug in tutorial          https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Your_first_WebExtension
 ***** Thanks everyone! ***** 
  */
