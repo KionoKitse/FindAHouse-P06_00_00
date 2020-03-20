@@ -88,36 +88,53 @@ function AddListing(db, Id, Price, Latitude, Longitude, Title, Url)
 	}
 }
 
-//Function to get a specific listing
-function GetListing(db, Id) 
+
+
+function ColorBorders(db,Id,DivId)
 {
+	//Variables 
+	var DefaultImg = "http://3.bp.blogspot.com/-KL7d7LdSANg/Tm5VLQf9k4I/AAAAAAAAACo/cSV52JoD7vk/s1600/cat-wallpaper-34-713472.jpg";
+	var Border_Yes = '2px solid #44C5CB'; 		//Inside geofence (Blue)
+	var Border_No = '2px solid #F53D52'; 		//Outside geofence (Red)
+	var Border_Maybe = '2px solid #FF9200'; 	//On the border (Orange)
+	var Border_Unknown = '2px solid #FCE315';	//Unprocessed (Yellow)
+
+	//Setup for IndexedDB query 
 	var transaction = db.transaction(["NotSureWhatThisIs"]);
 	var objectStore = transaction.objectStore("NotSureWhatThisIs");
 	var request = objectStore.get(Id);
-
+	
+	//Error
 	request.onerror = function(event) 
 	{
 		console.log('error GetListing: ' + event.target.errorCode);
 		window.alert('error GetListing: ' + event.target.errorCode);
-		return 0;
 	};
-
+	//Success
 	request.onsuccess = function(event) 
 	{
+		//Get the image to be edited
+		const Divs = document.getElementsByTagName('div');
+		var img = Divs[DivId].getElementsByTagName("img");
+		img[0].src = DefaultImg;
+		
 		// Do something with the request.result!
 		if(request.result) 
 		{
+			//Listing exists make the border blue
 			console.log("Listing " +Id+": Found");
 			console.log(request.result);
-			return 1;
+			img[0].style.border = Border_Yes;
 		} 
 		else 
 		{
+			//Listing does not exist make the border yellow
 			console.log("Listing " +Id+": Not found");
-			return 2;
+			img[0].style.border = Border_Unknown;
 		}
 	};
 }
+
 		 
 
 //IndexedDB Setup
@@ -140,15 +157,6 @@ const SampleData = [
 
 
 
-//Variables 
-var DefaultImg = "http://3.bp.blogspot.com/-KL7d7LdSANg/Tm5VLQf9k4I/AAAAAAAAACo/cSV52JoD7vk/s1600/cat-wallpaper-34-713472.jpg";
-
-var Border_Yes = '2px solid #44C5CB'; 		//Inside geofence (Blue)
-var Border_No = '2px solid #F53D52'; 		//Outside geofence (Red)
-var Border_Maybe = '2px solid #FF9200'; 	//On the border (Orange)
-var Border_Unknown = '2px solid #FCE315';	//Unprocessed (Yellow)
-
-
 
 //Start of the project
 console.log("Program Start FindAHouse");
@@ -160,8 +168,7 @@ let dbReq = indexedDB.open('FindAHouseData', 1);
 dbReq.onupgradeneeded = function(event) 
 {
 	// Set the db variable to our database so we can use it!  
-	db = event.target.result;
-	
+	db = event.target.result;	
 	console.log("Database upgrade");
 }
 dbReq.onsuccess = function(event) 
@@ -184,33 +191,13 @@ dbReq.onsuccess = function(event)
 		for (let i=0; i<Divs.length; i++)
 		{
 			var Div = Divs[i];
-			var Id = Div.getAttribute('data-listing-id');
-
+			var Id = Div.getAttribute('data-listing-id'); //String
 			
-			//If an Id is returned
+			//If this Div has an Id
 			if (Id)
 			{
-				// Print the Id
-				console.log(Id);
-				
-				//Check if the listing exists in the database
-				var Status = GetListing(db,Id);
-			
-				//Get the image and modify 
-				var Image = Div.getElementsByClassName("image");		
-				var img = Div.getElementsByTagName("img");
-				img[0].src = DefaultImg;
-				
-				if (Status == 1)
-				{
-					img[0].style.border = Border_Yes;
-				}
-				if (Status == 2)
-				{
-					img[0].style.border = Border_No;
-				}
-				
-				//TODO: need to highlight what is good and other etc
+				//Set the image and border
+				ColorBorders(db,parseInt(Id),i);
 			}
 		}
 		
@@ -281,7 +268,7 @@ dbReq.onsuccess = function(event)
 	//Stuff to do here
 	//addStickyNote(db, 4);
 	//AddListing(db, 5);
-	GetListing(db, 5); 
+	//GetListing(db, 5); 
 }
 dbReq.onerror = function(event) 
 {
@@ -313,5 +300,6 @@ dbReq.onerror = function(event)
  * IndexedDB help 					https://www.tutorialspoint.com/html5/html5_indexeddb.htm
  * More IndexedDB help				https://medium.com/@AndyHaskell2013/build-a-basic-web-app-with-indexeddb-8ab4f83f8bda
  * Color palette					https://www.schemecolor.com/4-colors-kite.php
+ * Function with Promise			https://stackoverflow.com/questions/49128292/indexeddb-wait-for-event
 ***** Thanks everyone! ***** 
  */
