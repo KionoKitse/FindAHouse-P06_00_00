@@ -4,7 +4,7 @@ function KeyValue(StringText, key)
 {
 	//Create Query
 	var query = "gptAdTargeting.push({ key: \'"+key+"\', value: \'";
-	if (ScriptText.includes(query))				
+	if (StringText.includes(query))				
 	{
 		//Get the start index
 		var QueryStart = StringText.indexOf(query);
@@ -68,14 +68,14 @@ function readAll()
 	
 }
 //Function to add a listing to the database
-function AddListing(db, Id, Price, Latitude, Longitude, Title, Url) 
+function AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, Comments, Url) 
 {
 	// Start a database transaction and get the notes object store
 	let tx = db.transaction(['NotSureWhatThisIs'], 'readwrite');
 	let store = tx.objectStore('NotSureWhatThisIs');  
 
 	// Put the sticky note into the object store
-	let note = {id: Id, price: Price, latitude: Latitude, longitude: Longitude, title: Title, url: Url};
+	let note = {id: Id, price: Price, latitude: Latitude, longitude: Longitude, title: Title, stats: Stats, comments: Comments, url: Url};
 	store.add(note);  // Wait for the database transaction to complete
 	tx.oncomplete = function() 
 	{ 
@@ -88,7 +88,11 @@ function AddListing(db, Id, Price, Latitude, Longitude, Title, Url)
 	}
 }
 
-
+function submitNote() {
+  let message = document.getElementById('newmessage');
+  addStickyNote(db, message.value);
+  message.value = '';
+}
 
 function ColorBorders(db,Id,DivId)
 {
@@ -116,7 +120,7 @@ function ColorBorders(db,Id,DivId)
 		//Get the image to be edited
 		const Divs = document.getElementsByTagName('div');
 		var img = Divs[DivId].getElementsByTagName("img");
-		img[0].src = DefaultImg;
+		//img[0].src = DefaultImg;
 		
 		// Do something with the request.result!
 		if(request.result) 
@@ -125,12 +129,14 @@ function ColorBorders(db,Id,DivId)
 			console.log("Listing " +Id+": Found");
 			console.log(request.result);
 			img[0].style.border = Border_Yes;
+			img[0].title="I'm sorry it's ended up this way and I'm trying to come up with something interesting to say but there is nothing interesting to say";
 		} 
 		else 
 		{
 			//Listing does not exist make the border yellow
 			console.log("Listing " +Id+": Not found");
 			img[0].style.border = Border_Unknown;
+			img[0].title="Unknown";
 		}
 	};
 }
@@ -152,7 +158,7 @@ if (!window.indexedDB)
 }
 //Create some sample data
 const SampleData = [
-{ id: 1485561878, price: 800, latitude: 45.5410856, longitude: -73.6129627, title: "Looking for  furnished studio", url: "https://www.kijiji.ca/v-appartement-condo/ville-de-montreal/looking-for-furnished-studio/1485561878?siteLocale=en_CA"}
+{ id: 1484576623, price: 1500, latitude: 45.5350003, longitude: -73.6207934, title: "Condo for rent", stats: 0, comments: "None", url: "https://www.kijiji.ca/v-appartement-condo/ville-de-montreal/condo-for-rent/1484576623?siteLocale=en_CA"}
 ];
 
 
@@ -162,14 +168,61 @@ const SampleData = [
 console.log("Program Start FindAHouse");
 //window.alert("Hello ^_^ FindAHouse is running!")
 
+
+
+
+
+
+
+
+
+//Global Variables
+var Id, Price, Latitude, Longitude, Title, Stats, Comments, Url;
+Comments = "None"; //Default value
+Stats = 0;
+
+chrome.runtime.onMessage.addListener(assignTextToTextareas);
+function assignTextToTextareas(message){
+	console.log("PartA");
+	
+    Comments = message.updateTextTo;
+	console.log(Comments);
+
+    //chrome.runtime.onMessage.removeListener(assignTextToTextareas);  //optional
+}
+console.log("PartB");
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //Start the database and only proceed if database values have been received
 let db;
-let dbReq = indexedDB.open('FindAHouseData', 1);
+let dbReq = indexedDB.open('FindAHouseData', 3);
 dbReq.onupgradeneeded = function(event) 
 {
 	// Set the db variable to our database so we can use it!  
 	db = event.target.result;	
 	console.log("Database upgrade");
+	
+	var objectStore = db.createObjectStore("NotSureWhatThisIs", {keyPath: "id"});
+	for (var i in SampleData) 
+	{
+		objectStore.add(SampleData[i]);
+	}
+
 }
 dbReq.onsuccess = function(event) 
 {
@@ -191,13 +244,14 @@ dbReq.onsuccess = function(event)
 		for (let i=0; i<Divs.length; i++)
 		{
 			var Div = Divs[i];
-			var Id = Div.getAttribute('data-listing-id'); //String
+			var tempId = Div.getAttribute('data-listing-id'); //String
 			
 			//If this Div has an Id
-			if (Id)
+			if (tempId)
 			{
+				Id = parseInt(tempId);
 				//Set the image and border
-				ColorBorders(db,parseInt(Id),i);
+				ColorBorders(db,Id,i);
 			}
 		}
 		
@@ -212,8 +266,6 @@ dbReq.onsuccess = function(event)
 		
 		//Get all the scripts in the header
 		const Scripts  = theHead.getElementsByTagName('script');
-		var Price;
-		var Id;
 		for (let i=0; i<Scripts.length; i++)
 		{
 			var Script = Scripts[i]; //Object
@@ -254,6 +306,14 @@ dbReq.onsuccess = function(event)
 			console.log(Latitude);
 			console.log(Longitude);
 			console.log(Url);
+			
+			//TESTING ZONE: Trying to change the text in the box
+			
+			
+
+			
+			
+			
 		}
 		else
 		{
@@ -301,5 +361,9 @@ dbReq.onerror = function(event)
  * More IndexedDB help				https://medium.com/@AndyHaskell2013/build-a-basic-web-app-with-indexeddb-8ab4f83f8bda
  * Color palette					https://www.schemecolor.com/4-colors-kite.php
  * Function with Promise			https://stackoverflow.com/questions/49128292/indexeddb-wait-for-event
+ * Text on images 					https://community.canvaslms.com/docs/DOC-4096
+ * Adding HTML to HTML				https://stackoverflow.com/questions/3762385/best-way-to-inject-html-using-javascript
+ * Popup to content script			https://stackoverflow.com/questions/40645538/communicate-data-from-popup-to-content-script-injected-by-popup-with-executescri
+ 
 ***** Thanks everyone! ***** 
  */

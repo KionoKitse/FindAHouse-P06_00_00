@@ -1,21 +1,26 @@
 {
+	"description": "Web extension to assist housing search on Kijiji",
+	"manifest_version": 2,
+	"name": "FindAHouse",
+	"version": "1.0",
+	"homepage_url": "https://kionokitse.wordpress.com/findahouse/",
+	"icons": {"48": "Otter.png"},
+	"permissions": ["contextMenus"],
 
-  "description": "Web extension to assist housing search on Kijiji",
-  "manifest_version": 2,
-  "name": "FindAHouse",
-  "version": "1.0",
-  "homepage_url": "https://kionokitse.wordpress.com/findahouse/",
-  "icons": {
-    "48": "Otter.png"
-  },
-
-  "content_scripts": [
-    {
-      "matches": ["*://*.kijiji.ca/*"],
-      "js": ["FindAHouse.js"]
-    }
-  ]
-
+	"content_scripts": 
+	[
+		{
+			"matches": ["*://*.kijiji.ca/*"],
+			"js": ["FindAHouse.js"],
+			"run_at": "document_end"
+		}
+	],
+	
+	"browser_action" : 
+	{
+		"default_popup" : "popup.html",
+		"default_title" : "A popup will come"
+	}
 }
 /*
 ***** ROLL THE CREDITS *****
