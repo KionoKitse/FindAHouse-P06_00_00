@@ -125,22 +125,57 @@ function ColorBorders(db,Id,DivId)
 		// Do something with the request.result!
 		if(request.result) 
 		{
-			//Listing exists make the border blue
+			//Get the comment associated with the record
+			var data = event.target.result;
+			Comments = data.comments;
+			
+			//Listing exists make the border blue and set the comment
 			console.log("Listing " +Id+": Found");
 			console.log(request.result);
 			img[0].style.border = Border_Yes;
-			img[0].title="I'm sorry it's ended up this way and I'm trying to come up with something interesting to say but there is nothing interesting to say";
+			img[0].title = Comments;
 		} 
 		else 
 		{
 			//Listing does not exist make the border yellow
 			console.log("Listing " +Id+": Not found");
 			img[0].style.border = Border_Unknown;
-			img[0].title="Unknown";
 		}
 	};
 }
 
+//Check if a ID already exists in IndexedDB
+function CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, Comments, Url)
+{
+	//Setup for IndexedDB query 
+	var transaction = db.transaction(["NotSureWhatThisIs"]);
+	var objectStore = transaction.objectStore("NotSureWhatThisIs");
+	var request = objectStore.get(Id);
+	
+	//Error
+	request.onerror = function(event) 
+	{
+		console.log('error GetListing: ' + event.target.errorCode);
+		window.alert('error GetListing: ' + event.target.errorCode);
+	};
+	//Success
+	request.onsuccess = function(event) 
+	{
+		// Do something with the request.result!
+		if(request.result) 
+		{
+			//Listing exists don't do anything
+			console.log("Listing already exists don't add to database");
+		} 
+		else 
+		{
+			//Listing does not exist add it to the database
+			console.log("Listing does not exist add it to the database");
+			AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, Comments, Url); 
+		}
+	};
+
+}
 		 
 
 //IndexedDB Setup
@@ -166,47 +201,11 @@ const SampleData = [
 
 //Start of the project
 console.log("Program Start FindAHouse");
-//window.alert("Hello ^_^ FindAHouse is running!")
-
-
-
-
-
-
-
-
 
 //Global Variables
 var Id, Price, Latitude, Longitude, Title, Stats, Comments, Url;
 Comments = "None"; //Default value
 Stats = 0;
-
-chrome.runtime.onMessage.addListener(assignTextToTextareas);
-function assignTextToTextareas(message){
-	console.log("PartA");
-	
-    Comments = message.updateTextTo;
-	console.log(Comments);
-
-    //chrome.runtime.onMessage.removeListener(assignTextToTextareas);  //optional
-}
-console.log("PartB");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 //Start the database and only proceed if database values have been received
 let db;
@@ -264,7 +263,8 @@ dbReq.onsuccess = function(event)
 		//Get the header of the document (where all the content I need is stored)
 		var theHead = document.head; //object
 		
-		//Get all the scripts in the header
+		//Get the Id number and the Price
+		var ValidListing = false;
 		const Scripts  = theHead.getElementsByTagName('script');
 		for (let i=0; i<Scripts.length; i++)
 		{
@@ -274,41 +274,47 @@ dbReq.onsuccess = function(event)
 				var ScriptText = Script.text;
 				if (ScriptText.includes('gptAdTargeting'))
 				{
-					Price = KeyValue(ScriptText, "price");
-					Id = KeyValue(ScriptText, "g_adid");
-					if (Price.length > 0 || Id.length > 0)
+					var tempPrice = KeyValue(ScriptText, "price");
+					var tempId = KeyValue(ScriptText, "g_adid");
+					if (tempPrice.length > 0 || tempId.length > 0)
 					{
+						Price = parseInt(tempPrice);
+						Id = parseInt(tempId);
+						ValidListing = true;
 						break;
 					}
 				}	
 			}				
 		}
-		// Only proceed if an Id has been found else 
+		
+		// Only proceed the listing is in the correct format 
 		console.log(Id);
-		if (Id.length>0)
+		if (ValidListing)
 		{
 			//Enter valid listing mode
 			console.log("Valid listing mode");
 			
-			//Other variables
-			var Latitude = getMeta('og:latitude') //String
-			var Longitude = getMeta('og:longitude') //String
-			var Url = getMeta('og:url') //String
-			var TitleLong = getMeta('og:title') //String
+			//Get the other variables
+			Latitude = parseFloat(getMeta('og:latitude')); 
+			Longitude = parseFloat(getMeta('og:longitude'));
+			Url = getMeta('og:url');
+			var tempTitle = getMeta('og:title');
 			
 			//Trim Title
-			var CutPoint = TitleLong.indexOf(" |");
-			var Title =  TitleLong.substring(0,CutPoint);
+			var CutPoint = tempTitle.indexOf(" |");
+			Title =  tempTitle.substring(0,CutPoint);
 			
 			//Log results
 			console.log(Price);
 			console.log(Title);
 			console.log(Latitude);
 			console.log(Longitude);
+			console.log(Stats);
+			console.log(Comments);
 			console.log(Url);
 			
-			//TESTING ZONE: Trying to change the text in the box
-			
+			//Check if the listing already exists in the database
+			CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, Comments, Url);
 			
 
 			
@@ -336,7 +342,63 @@ dbReq.onerror = function(event)
 }
 
 
+chrome.runtime.onMessage.addListener(AddComment);
+function AddComment(message){
+	console.log("Updating Record");
+	
+	//Get the comment from the message from popup.js
+    Comments = message.updateTextTo;
+	
+	//Print the relevant data
+	console.log(Id);
+	console.log(Stats);
+	console.log(Comments);
 
+    //Connect to the database
+	let db;
+	let dbReq = indexedDB.open('FindAHouseData', 3);
+	dbReq.onsuccess = function(event) 
+	{
+		//Database connected
+		db = event.target.result;
+		
+		//Setup for IndexedDB query to get the record associated with Id
+		var transaction = db.transaction(["NotSureWhatThisIs"],"readwrite");
+		var objectStore = transaction.objectStore("NotSureWhatThisIs");
+		var request = objectStore.get(Id);
+		
+		//Error could not get the record
+		request.onerror = function(event) 
+		{
+			console.log("AddComment: Could not get record");
+		};
+		
+		//Success retrieved the record 
+		request.onsuccess = function(event) 
+		{
+			//Get the old comment and replace it with the new comment
+			var data = event.target.result;
+			data.comments = Comments;
+			var objRequest = objectStore.put(data);
+			
+			//Comment updated
+			objRequest.onsuccess = function(event)
+			{
+				console.log('Success in updating record');
+			}
+			//Could not update comment
+			objRequest.onerror = function(event)
+			{
+				console.log("AddComment: Could not update record");
+			}
+		};
+	}
+	dbReq.onerror = function(event) 
+	{
+		console.log("AddComment: Could not connect");
+		alert('AddComment: error opening database ' + event.target.errorCode);
+	}
+}
 
 
 
@@ -364,6 +426,7 @@ dbReq.onerror = function(event)
  * Text on images 					https://community.canvaslms.com/docs/DOC-4096
  * Adding HTML to HTML				https://stackoverflow.com/questions/3762385/best-way-to-inject-html-using-javascript
  * Popup to content script			https://stackoverflow.com/questions/40645538/communicate-data-from-popup-to-content-script-injected-by-popup-with-executescri
+ * Updating a record				https://stackoverflow.com/questions/26177259/indexeddb-updating-a-record
  
 ***** Thanks everyone! ***** 
  */
