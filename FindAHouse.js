@@ -37,36 +37,6 @@ function getMeta(Tag)
 	}
 	return '';
 }
-// Read all database results
-function readAll() 
-{
-	var db;
-	var request = window.indexedDB.open("FindAHouseData", 1);
-	
-	request.onsuccess = function(event) 
-	{
-		db = request.result;
-		var objectStore = db.transaction("NotSureWhatThisIs").objectStore("NotSureWhatThisIs");
-
-		objectStore.openCursor().onsuccess = function(event) 
-		{
-			var cursor = event.target.result;
-
-			if (cursor) 
-			{
-				console.log(cursor.value);
-				cursor.continue();
-			} 
-			else 
-			{
-				//alert("No more entries!");
-			}
-		};
-		
-	};
-	
-	
-}
 //Function to add a listing to the database
 function AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, Comments, Url) 
 {
@@ -87,13 +57,6 @@ function AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, Comments, 
 		window.alert('error AddListing: ' + event.target.errorCode);
 	}
 }
-
-function submitNote() {
-  let message = document.getElementById('newmessage');
-  addStickyNote(db, message.value);
-  message.value = '';
-}
-
 function ColorBorders(db,Id,DivId)
 {
 	//Variables 
@@ -128,12 +91,13 @@ function ColorBorders(db,Id,DivId)
 			//Get the comment associated with the record
 			var data = event.target.result;
 			Comments = data.comments;
+			Stats = data.stats;
 			
 			//Listing exists make the border blue and set the comment
 			console.log("Listing " +Id+": Found");
 			console.log(request.result);
 			img[0].style.border = Border_Yes;
-			img[0].title = Comments;
+			img[0].title = Stats + ": " + Comments;
 		} 
 		else 
 		{
@@ -348,6 +312,7 @@ function AddComment(message){
 	
 	//Get the comment from the message from popup.js
     Comments = message.updateTextTo;
+	Stats = message.updateStats;
 	
 	//Print the relevant data
 	console.log(Id);
@@ -379,6 +344,7 @@ function AddComment(message){
 			//Get the old comment and replace it with the new comment
 			var data = event.target.result;
 			data.comments = Comments;
+			data.stats = Stats;
 			var objRequest = objectStore.put(data);
 			
 			//Comment updated

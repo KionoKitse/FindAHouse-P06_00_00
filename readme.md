@@ -13,6 +13,7 @@
  * 2020-03-27: Added comments over the images
  * 2020-03-30: Adding popup dialog to extension icon and getting the comments from that popup
  * 2020-03-30: Add listing automatically and update record when new comment is received 
+ * 2020-04-01: Added radio buttons for stats
  
 >> Open Points <<
  * Add the stats section
