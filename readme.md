@@ -16,7 +16,6 @@
  * 2020-04-01: Added radio buttons for stats
  
 >> Open Points <<
- * Add the stats section
  * Geofencing part
  
 >> Notebook <<
@@ -27,6 +26,8 @@
  * document.getElementsByTagName
  * document.getElementById -> getElementsByTagName
  * document.getElementsByClassName
+ 
+ 
  
  * A cool place to test code quickly https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/localeCompare
 

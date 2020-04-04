@@ -38,14 +38,14 @@ function getMeta(Tag)
 	return '';
 }
 //Function to add a listing to the database
-function AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, Comments, Url) 
+function AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, InZone, Comments, Url) 
 {
 	// Start a database transaction and get the notes object store
 	let tx = db.transaction(['NotSureWhatThisIs'], 'readwrite');
 	let store = tx.objectStore('NotSureWhatThisIs');  
 
 	// Put the sticky note into the object store
-	let note = {id: Id, price: Price, latitude: Latitude, longitude: Longitude, title: Title, stats: Stats, comments: Comments, url: Url};
+	let note = {id: Id, price: Price, latitude: Latitude, longitude: Longitude, title: Title, stats: Stats, inzone: InZone, comments: Comments, url: Url};
 	store.add(note);  // Wait for the database transaction to complete
 	tx.oncomplete = function() 
 	{ 
@@ -92,12 +92,33 @@ function ColorBorders(db,Id,DivId)
 			var data = event.target.result;
 			Comments = data.comments;
 			Stats = data.stats;
+			InZone = data.inzone;
 			
 			//Listing exists make the border blue and set the comment
-			console.log("Listing " +Id+": Found");
-			console.log(request.result);
-			img[0].style.border = Border_Yes;
-			img[0].title = Stats + ": " + Comments;
+			console.log("Listing " +Id+": Found InZone: " + InZone);
+			//console.log(request.result);
+			
+			//Within Geofence
+			if (InZone)
+			{
+				img[0].style.border = Border_Yes;
+				img[0].title = Stats + ": " + Comments;
+			}
+			//Outside of Geofence or on boarder
+			else
+			{
+				//On the boarder
+				if(Stats > 1)
+				{
+					img[0].style.border = Border_Maybe;
+					img[0].title = Stats + ": " + Comments;
+				}
+				else
+				{
+					img[0].style.border = Border_No;
+					img[0].title = Stats + ": " + Comments;
+				}
+			}
 		} 
 		else 
 		{
@@ -109,7 +130,7 @@ function ColorBorders(db,Id,DivId)
 }
 
 //Check if a ID already exists in IndexedDB
-function CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, Comments, Url)
+function CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, InZone, Comments, Url)
 {
 	//Setup for IndexedDB query 
 	var transaction = db.transaction(["NotSureWhatThisIs"]);
@@ -135,12 +156,33 @@ function CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, Comments,
 		{
 			//Listing does not exist add it to the database
 			console.log("Listing does not exist add it to the database");
-			AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, Comments, Url); 
+			AddListing(db, Id, Price, Latitude, Longitude, Title, Stats, InZone, Comments, Url); 
 		}
 	};
 
 }
 		 
+function CheckInZone(Latitude,Longitude,BoundX,BoundY ) 
+{
+	var polyCorners = BoundX.length
+	var i = 0;
+	var j = polyCorners-1;
+	var oddNodes = false;
+
+	for (i=0; i<polyCorners; i++) 
+	{
+		if (BoundY[i]<Longitude && BoundY[j]>=Longitude ||  BoundY[j]<Longitude && BoundY[i]>=Longitude) 
+		{
+			if (BoundX[i]+(Longitude-BoundY[i])/(BoundY[j]-BoundY[i])*(BoundX[j]-BoundX[i])<Latitude) 
+			{
+				oddNodes=!oddNodes; 
+			}
+		}
+    j=i; 
+	}
+
+  return oddNodes; }	
+	
 
 //IndexedDB Setup
 //prefixes of implementation that we want to test
@@ -157,23 +199,23 @@ if (!window.indexedDB)
 }
 //Create some sample data
 const SampleData = [
-{ id: 1484576623, price: 1500, latitude: 45.5350003, longitude: -73.6207934, title: "Condo for rent", stats: 0, comments: "None", url: "https://www.kijiji.ca/v-appartement-condo/ville-de-montreal/condo-for-rent/1484576623?siteLocale=en_CA"}
+{ id: 1484576623, price: 1500, latitude: 45.5350003, longitude: -73.6207934, title: "Condo for rent", stats: 0, inzone: true, comments: "None", url: "https://www.kijiji.ca/v-appartement-condo/ville-de-montreal/condo-for-rent/1484576623?siteLocale=en_CA"}
 ];
-
-
+var BoundX = new Float32Array([45.503526, 45.554263, 45.527963, 45.469077]);
+var BoundY = new Float32Array([-73.665182, -73.621549, -73.563956, -73.600237]);
 
 
 //Start of the project
 console.log("Program Start FindAHouse");
 
 //Global Variables
-var Id, Price, Latitude, Longitude, Title, Stats, Comments, Url;
+var Id, Price, Latitude, Longitude, Title, Stats, InZone, Comments, Url;
 Comments = "None"; //Default value
 Stats = 0;
 
 //Start the database and only proceed if database values have been received
 let db;
-let dbReq = indexedDB.open('FindAHouseData', 3);
+let dbReq = indexedDB.open('FindAHouseData', 1);
 dbReq.onupgradeneeded = function(event) 
 {
 	// Set the db variable to our database so we can use it!  
@@ -268,22 +310,21 @@ dbReq.onsuccess = function(event)
 			var CutPoint = tempTitle.indexOf(" |");
 			Title =  tempTitle.substring(0,CutPoint);
 			
+			InZone = CheckInZone(Latitude,Longitude,BoundX,BoundY);
+			console.log("GeoFense: " + InZone);
+			
 			//Log results
-			console.log(Price);
-			console.log(Title);
-			console.log(Latitude);
-			console.log(Longitude);
-			console.log(Stats);
-			console.log(Comments);
-			console.log(Url);
+			console.log('Price: ' + Price);
+			console.log('Title: ' + Title);
+			console.log('Latitude: ' + Latitude);
+			console.log('Longitude: ' + Longitude);
+			console.log('Stats: ' + Stats);
+			console.log('InZone: ' + InZone);
+			console.log('Comments: ' + Comments);
+			console.log('Url :' + Url);
 			
 			//Check if the listing already exists in the database
-			CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, Comments, Url);
-			
-
-			
-			
-			
+			CheckExistId(db,Id, Price, Latitude, Longitude, Title, Stats, InZone, Comments, Url);	
 		}
 		else
 		{
@@ -293,12 +334,6 @@ dbReq.onsuccess = function(event)
 		
 		
 	}
-
-
-	//Stuff to do here
-	//addStickyNote(db, 4);
-	//AddListing(db, 5);
-	//GetListing(db, 5); 
 }
 dbReq.onerror = function(event) 
 {
@@ -393,6 +428,6 @@ function AddComment(message){
  * Adding HTML to HTML				https://stackoverflow.com/questions/3762385/best-way-to-inject-html-using-javascript
  * Popup to content script			https://stackoverflow.com/questions/40645538/communicate-data-from-popup-to-content-script-injected-by-popup-with-executescri
  * Updating a record				https://stackoverflow.com/questions/26177259/indexeddb-updating-a-record
- 
+ * Geofence							http://alienryderflex.com/polygon/
 ***** Thanks everyone! ***** 
  */
