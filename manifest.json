@@ -1,3 +1,4 @@
+//manifest.json
 {
 	"description": "Web extension to assist housing search on Kijiji",
 	"manifest_version": 2,
@@ -19,7 +20,7 @@
 	"browser_action" : 
 	{
 		"default_popup" : "popup.html",
-		"default_title" : "A popup will come"
+		"default_title" : "Add a comment and rating"
 	}
 }
 /*
