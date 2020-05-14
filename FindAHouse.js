@@ -201,13 +201,13 @@ if (!window.indexedDB)
 const SampleData = [
 { id: 1484576623, price: 1500, latitude: 45.5350003, longitude: -73.6207934, title: "Condo for rent", stats: 0, inzone: true, comments: "None", url: "https://www.kijiji.ca/v-appartement-condo/ville-de-montreal/condo-for-rent/1484576623?siteLocale=en_CA"}
 ];
-var BoundX = new Float32Array([45.503526, 45.554263, 45.527963, 45.469077]);
-var BoundY = new Float32Array([-73.665182, -73.621549, -73.563956, -73.600237]);
+var BoundX = new Float32Array([45.57026,45.56114,45.54736,45.54204,45.5288,45.53864,45.55826,45.57454,45.58649,45.59227,45.58141,45.54328,45.51093,45.49262,45.48735,45.47935,45.46785,45.45885,45.45199,45.45283,45.4373,45.43998,45.45142,45.45813,45.46363,45.46558,45.4707,45.4741,45.46956,45.46561,45.46856,45.47663,45.48214,45.48422,45.48662,45.49182,45.5017,45.51,45.51556,45.50669,45.50134,45.50221,45.51373,45.52765,45.53264,45.54645,45.55321,45.56351,45.56541,45.55925,45.55396,45.56524]);
+var BoundY = new Float32Array([-73.59965,-73.58094,-73.58809,-73.59284,-73.56363,-73.56584,-73.56584,-73.56292,-73.5547,-73.5376,-73.52747,-73.52938,-73.54423,-73.55268,-73.55714,-73.55886,-73.55834,-73.55903,-73.56384,-73.58349,-73.59877,-73.61606,-73.6246,-73.60409,-73.58789,-73.57965,-73.57771,-73.57995,-73.58862,-73.61162,-73.62934,-73.63917,-73.64011,-73.64701,-73.66754,-73.66943,-73.685,-73.68736,-73.66375,-73.65084,-73.64088,-73.63522,-73.63234,-73.63813,-73.63509,-73.67335,-73.67838,-73.67005,-73.66074,-73.65108,-73.62203,-73.61282]);
 
 
 //Start of the project
 console.log("Program Start FindAHouse");
-
+chrome.runtime.onMessage.addListener(AddComment);
 //Global Variables
 var Id, Price, Latitude, Longitude, Title, Stats, InZone, Comments, Url;
 Comments = "None"; //Default value
@@ -341,7 +341,7 @@ dbReq.onerror = function(event)
 }
 
 
-chrome.runtime.onMessage.addListener(AddComment);
+
 function AddComment(message){
 	console.log("Updating Record");
 	
@@ -356,12 +356,11 @@ function AddComment(message){
 
     //Connect to the database
 	let db;
-	let dbReq = indexedDB.open('FindAHouseData', 3);
+	let dbReq = indexedDB.open('FindAHouseData', 1);
 	dbReq.onsuccess = function(event) 
 	{
 		//Database connected
 		db = event.target.result;
-		
 		//Setup for IndexedDB query to get the record associated with Id
 		var transaction = db.transaction(["NotSureWhatThisIs"],"readwrite");
 		var objectStore = transaction.objectStore("NotSureWhatThisIs");
@@ -386,6 +385,7 @@ function AddComment(message){
 			objRequest.onsuccess = function(event)
 			{
 				console.log('Success in updating record');
+				//alert('Added');
 			}
 			//Could not update comment
 			objRequest.onerror = function(event)

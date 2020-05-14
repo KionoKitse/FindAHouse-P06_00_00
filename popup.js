@@ -2,7 +2,7 @@ function ButtonAction()
 {
 	var TextContent = document.getElementById('comments').value;
 	var StatsContent = document.getElementsByName("Stats");
-	var StatVal;
+	var StatVal = '0';
 
     for(var i = 0; i < StatsContent.length; i++) 
     {
@@ -13,9 +13,10 @@ function ButtonAction()
    }
    
 	
-	alert('ButtonAction: ' + StatVal);
+	
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) 
 	{
+		
 		chrome.tabs.executeScript(tabs[0].id, 
 		{file: "FindAHouse.js"}, 
 		function()
